@@ -7,7 +7,7 @@ import (
 	// Make sure the MySQL driver has called `init()`
 	_ "github.com/go-sql-driver/mysql"
 
-	//sq "github.com/Masterminds/squirrel"
+	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/twpayne/go-geom"
 	"github.com/twpayne/go-geom/encoding/wkb"
@@ -25,6 +25,11 @@ func main() {
 			"sqlx.open() failed with: %v", err)
 	}
 
+	InsertSQLX(db)
+	InsertSquirrel(db)
+}
+
+func InsertSQLX(db *sqlx.DB) {
 	// Define a point in 2-D space.
 	p := wkb.Point{
 		Point: geom.NewPoint(geom.XY).
@@ -50,10 +55,19 @@ func main() {
 	}
 
 	log.Printf("Retrieved point with coordinates:\n(%v, %v)\n", ret.FlatCoords()[0], ret.FlatCoords()[1])
+}
 
-	// Generate SQL insert statement.
-	/*query, args, err := sq.Insert("").Into("points").Columns("pt").
-		Values(&p).
+func InsertSquirrel(db *sqlx.DB) {
+	// Define a point in 2-D space.
+	p := wkb.Point{
+		Point: geom.NewPoint(geom.XY).
+			MustSetCoords(
+				geom.Coord{-77.8187259, 40.8089934})}
+
+	log.Printf("Inserting point with coordinates:\n(%v, %v)\n", p.FlatCoords()[0], p.FlatCoords()[1])
+
+	query, args, err := sq.Insert("").Into("points").Columns("pt").
+		Values(sq.Expr("ST_GeomFromWKB(?)", &p)).
 		ToSql()
 	if err != nil {
 		log.Fatalf("SQL generation failed: %v", err)
@@ -69,5 +83,19 @@ func main() {
 		log.Fatalf("SQL introspection failed: %v", err)
 	}
 
-	log.Printf("New row ID: %v", lastID)*/
+	ret := wkb.Point{Point: geom.NewPoint(geom.XY)}
+
+	query, args, err = sq.Select("ST_AsWKB(pt)").From("points").
+		Where(sq.Eq{"id": lastID}).
+		ToSql()
+	if err != nil {
+		log.Fatalf("SQL generation failed: %v", err)
+	}
+
+	err = db.Get(&ret, query, args...)
+	if err != nil {
+		log.Fatalf("SELECT failed: %v", err)
+	}
+
+	log.Printf("Retrieved point with coordinates:\n(%v, %v)\n", ret.FlatCoords()[0], ret.FlatCoords()[1])
 }
