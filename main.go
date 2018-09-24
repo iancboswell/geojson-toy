@@ -7,7 +7,7 @@ import (
 	// Make sure the MySQL driver has called `init()`
 	_ "github.com/go-sql-driver/mysql"
 
-	sq "github.com/Masterminds/squirrel"
+	//sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/twpayne/go-geom"
 	"github.com/twpayne/go-geom/encoding/wkb"
@@ -31,8 +31,28 @@ func main() {
 			MustSetCoords(
 				geom.Coord{-77.8187259, 40.8089934})}
 
+	log.Printf("Inserting point with coordinates:\n(%v, %v)\n", p.FlatCoords()[0], p.FlatCoords()[1])
+
+	result, err := db.Exec(`INSERT INTO points (pt) VALUES (ST_GeomFromWKB(?));`, &p)
+	if err != nil {
+		log.Fatalf("SQL INSERT failed: %v", err)
+	}
+
+	lastID, err := result.LastInsertId()
+	if err != nil {
+		log.Fatalf("Introspection failed: %v", err)
+	}
+
+	var ret wkb.Point
+	err = db.Get(&ret, "SELECT pt FROM points WHERE id = ?", lastID)
+	if err != nil {
+		log.Fatalf("SELECT failed: %v", err)
+	}
+
+	log.Printf("Retrieved point with coordinates:\n(%v, %v)\n", ret.FlatCoords()[0], ret.FlatCoords()[1])
+
 	// Generate SQL insert statement.
-	query, args, err := sq.Insert("").Into("points").Columns("pt").
+	/*query, args, err := sq.Insert("").Into("points").Columns("pt").
 		Values(&p).
 		ToSql()
 	if err != nil {
@@ -49,5 +69,5 @@ func main() {
 		log.Fatalf("SQL introspection failed: %v", err)
 	}
 
-	log.Printf("New row ID: %v", lastID)
+	log.Printf("New row ID: %v", lastID)*/
 }
