@@ -43,8 +43,8 @@ func main() {
 		log.Fatalf("Introspection failed: %v", err)
 	}
 
-	var ret wkb.Point
-	err = db.Get(&ret, "SELECT pt FROM points WHERE id = ?", lastID)
+	ret := wkb.Point{Point: geom.NewPoint(geom.XY)}
+	err = db.Get(&ret, "SELECT ST_AsWKB(pt) FROM points WHERE id = ?", lastID)
 	if err != nil {
 		log.Fatalf("SELECT failed: %v", err)
 	}
