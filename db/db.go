@@ -38,7 +38,7 @@ func InsertSQLX() wkb.Point {
 	p := wkb.Point{
 		Point: geom.NewPoint(geom.XY).
 			MustSetCoords(
-				geom.Coord{-77.8187259, 40.8089934})}
+				geom.Coord{40.8089934, -77.8187259})}
 
 	log.Printf("Inserting point with coordinates:\n%v\n", p.FlatCoords())
 
@@ -68,7 +68,7 @@ func InsertSquirrel() wkb.Point {
 	p := wkb.Point{
 		Point: geom.NewPoint(geom.XY).
 			MustSetCoords(
-				geom.Coord{-77.8187259, 40.8089934})}
+				geom.Coord{40.8089934, -77.8187259})}
 
 	log.Printf("Inserting point with coordinates:\n%v\n", p.FlatCoords())
 
@@ -113,7 +113,7 @@ func InsertStructMember() model.Pointy {
 	p := model.Pointy{P: wkb.Point{
 		Point: geom.NewPoint(geom.XY).
 			MustSetCoords(
-				geom.Coord{-77.8187259, 40.8089934})}}
+				geom.Coord{40.8089934, -77.8187259})}}
 
 	log.Printf("Inserting point with coordinates:\n%v\n", p.P.FlatCoords())
 
@@ -154,7 +154,14 @@ func InsertStructMember() model.Pointy {
 }
 
 func InsertPoly() model.Poly {
-	coords := [][]geom.Coord{{{1, 2}, {3, 4}, {5, 6}, {7, 8}}}
+	coords := [][]geom.Coord{{
+		{40.8089934, -77.8187259},
+		{18.470299, -66.719073},
+		{35.678105, -108.114275},
+		{44.940218, -93.170220},
+		{41.878113, -87.629799},
+		{40.8089934, -77.8187259}}}
+
 	p := model.NewPoly(coords)
 
 	log.Printf("Inserting polygon with coordinates:\n%v\n", p.P.FlatCoords())
@@ -190,7 +197,7 @@ func InsertPoly() model.Poly {
 		log.Fatalf("SELECT failed: %v", err)
 	}
 
-	log.Printf("Retrieved point with coordinates:\n%v\n", ret.P.FlatCoords())
+	log.Printf("Retrieved polygon with coordinates:\n%v\n", ret.P.FlatCoords())
 
 	return ret
 }

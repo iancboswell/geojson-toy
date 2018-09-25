@@ -4,20 +4,29 @@ import (
 	"log"
 
 	"github.com/iancboswell/geojson-toy/db"
-	"github.com/iancboswell/geojson-toy/json"
+	"github.com/iancboswell/geojson-toy/model"
 )
 
 func main() {
-	// Insert & retrieve Geometry-containing struct
+	// Insert & retrieve Point-containing struct
 	p := db.InsertStructMember()
 
 	// Create GeoJSON byte blob
-	b := json.MarshalFeature(p)
+	b := p.MarshalAsFeature()
 
 	// Unmarshal GeoJSON byte blob & convert back to Pointy
-	p2 := json.UnmarshalFeature(b)
+	p2 := model.UnmarshalPointAsFeature(b)
 
 	log.Printf("Unmarshalled Pointy Point: %v", p2.P.FlatCoords())
 
-	db.InsertPoly()
+	// Insert & retrieve Polygon-containing struct
+	po := db.InsertPoly()
+
+	// Create GeoJSON byte blob
+	bo := po.Marshal()
+
+	// Unmarshal GeoJSON byte blob & convert back to Pointy
+	po2 := model.UnmarshalPolygon(bo)
+
+	log.Printf("Unmarshalled Poly Polygon: %v", po2.P.FlatCoords())
 }
