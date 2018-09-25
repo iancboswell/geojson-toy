@@ -152,3 +152,45 @@ func InsertStructMember() model.Pointy {
 
 	return ret
 }
+
+func InsertPoly() model.Poly {
+	coords := [][]geom.Coord{{{1, 2}, {3, 4}, {5, 6}, {7, 8}}}
+	p := model.NewPoly(coords)
+
+	log.Printf("Inserting polygon with coordinates:\n%v\n", p.P.FlatCoords())
+
+	query, args, err := sq.Insert("").Into("polygons").Columns("poly").
+		Values(sq.Expr("ST_GeomFromWKB(?)", &p.P)).
+		ToSql()
+	if err != nil {
+		log.Fatalf("SQL generation failed: %v", err)
+	}
+
+	res, err := db.Exec(query, args...)
+	if err != nil {
+		log.Fatalf("SQL insert execution error: %v", err)
+	}
+
+	lastID, err := res.LastInsertId()
+	if err != nil {
+		log.Fatalf("SQL introspection failed: %v", err)
+	}
+
+	var ret model.Poly
+
+	query, args, err = sq.Select("ST_AsWKB(poly)").From("polygons").
+		Where(sq.Eq{"id": lastID}).
+		ToSql()
+	if err != nil {
+		log.Fatalf("SQL generation failed: %v", err)
+	}
+
+	err = db.Get(&ret, query, args...)
+	if err != nil {
+		log.Fatalf("SELECT failed: %v", err)
+	}
+
+	log.Printf("Retrieved point with coordinates:\n%v\n", ret.P.FlatCoords())
+
+	return ret
+}

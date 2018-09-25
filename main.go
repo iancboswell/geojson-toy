@@ -18,4 +18,6 @@ func main() {
 	p2 := json.UnmarshalFeature(b)
 
 	log.Printf("Unmarshalled Pointy Point: %v", p2.P.FlatCoords())
+
+	db.InsertPoly()
 }
