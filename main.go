@@ -10,8 +10,13 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/twpayne/go-geom"
+	"github.com/twpayne/go-geom/encoding/geojson"
 	"github.com/twpayne/go-geom/encoding/wkb"
 )
+
+type Pointy struct {
+	P wkb.Point `db:"ST_AsWKB(pt)"`
+}
 
 func main() {
 	db, err := sqlx.Open("mysql", fmt.Sprintf(
@@ -25,9 +30,34 @@ func main() {
 			"sqlx.open() failed with: %v", err)
 	}
 
-	InsertSQLX(db)
-	InsertSquirrel(db)
-	InsertStructMember(db)
+	p := InsertStructMember(db)
+
+	// Marshal the point itself as a GeoJSON.
+	b, err := geojson.Marshal(p.P.Point)
+	if err != nil {
+		log.Fatalf("Failed to marshal point as GeoJSON: %v", err)
+	}
+
+	log.Printf("Marshalled the point on its own:\n%v\n", string(b))
+
+	// Marshal the point as part of a GeoJSON Feature.
+	f := geojson.Feature{Geometry: p.P.Point}
+	b, err = f.MarshalJSON()
+	if err != nil {
+		log.Fatalf("Failed to marshal GeoJSON feature: %v", err)
+	}
+
+	log.Printf("Marshalled the point as part of a feature:\n%v\n", string(b))
+
+	// Turn verbosity up to 11 with a FeatureCollection(tm)!
+	fc := geojson.FeatureCollection{[]*geojson.Feature{&f}}
+	b, err = fc.MarshalJSON()
+	if err != nil {
+		log.Fatalf("Failed to marshal GeoJSON feature collection: %v", err)
+	}
+
+	log.Printf("Marshalled the point as part of a feature collection:\n%v\n", string(b))
+
 }
 
 func InsertSQLX(db *sqlx.DB) {
@@ -37,7 +67,7 @@ func InsertSQLX(db *sqlx.DB) {
 			MustSetCoords(
 				geom.Coord{-77.8187259, 40.8089934})}
 
-	log.Printf("Inserting point with coordinates:\n(%v, %v)\n", p.FlatCoords()[0], p.FlatCoords()[1])
+	log.Printf("Inserting point with coordinates:\n%v\n", p.FlatCoords())
 
 	result, err := db.Exec(`INSERT INTO points (pt) VALUES (ST_GeomFromWKB(?));`, &p)
 	if err != nil {
@@ -55,7 +85,7 @@ func InsertSQLX(db *sqlx.DB) {
 		log.Fatalf("SELECT failed: %v", err)
 	}
 
-	log.Printf("Retrieved point with coordinates:\n(%v, %v)\n", ret.FlatCoords()[0], ret.FlatCoords()[1])
+	log.Printf("Retrieved point with coordinates:\n%v\n", ret.FlatCoords())
 }
 
 func InsertSquirrel(db *sqlx.DB) {
@@ -65,7 +95,7 @@ func InsertSquirrel(db *sqlx.DB) {
 			MustSetCoords(
 				geom.Coord{-77.8187259, 40.8089934})}
 
-	log.Printf("Inserting point with coordinates:\n(%v, %v)\n", p.FlatCoords()[0], p.FlatCoords()[1])
+	log.Printf("Inserting point with coordinates:\n%v\n", p.FlatCoords())
 
 	query, args, err := sq.Insert("").Into("points").Columns("pt").
 		Values(sq.Expr("ST_GeomFromWKB(?)", &p)).
@@ -98,21 +128,17 @@ func InsertSquirrel(db *sqlx.DB) {
 		log.Fatalf("SELECT failed: %v", err)
 	}
 
-	log.Printf("Retrieved point with coordinates:\n(%v, %v)\n", ret.FlatCoords()[0], ret.FlatCoords()[1])
+	log.Printf("Retrieved point with coordinates:\n%v\n", ret.FlatCoords())
 }
 
-func InsertStructMember(db *sqlx.DB) {
-	type Pointy struct {
-		P wkb.Point `db:"ST_AsWKB(pt)"`
-	}
-
+func InsertStructMember(db *sqlx.DB) Pointy {
 	// Define a point in 2-D space as a struct member.
 	p := Pointy{P: wkb.Point{
 		Point: geom.NewPoint(geom.XY).
 			MustSetCoords(
 				geom.Coord{-77.8187259, 40.8089934})}}
 
-	log.Printf("Inserting point with coordinates:\n(%v, %v)\n", p.P.FlatCoords()[0], p.P.FlatCoords()[1])
+	log.Printf("Inserting point with coordinates:\n%v\n", p.P.FlatCoords())
 
 	query, args, err := sq.Insert("").Into("points").Columns("pt").
 		Values(sq.Expr("ST_GeomFromWKB(?)", &p.P)).
@@ -145,5 +171,7 @@ func InsertStructMember(db *sqlx.DB) {
 		log.Fatalf("SELECT failed: %v", err)
 	}
 
-	log.Printf("Retrieved point with coordinates:\n(%v, %v)\n", ret.P.FlatCoords()[0], ret.P.FlatCoords()[1])
+	log.Printf("Retrieved point with coordinates:\n%v\n", ret.P.FlatCoords())
+
+	return ret
 }
