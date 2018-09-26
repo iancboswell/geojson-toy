@@ -23,13 +23,18 @@ func (p *Poly) Marshal() []byte {
 		log.Fatalf("Failed to marshal polygon as GeoJSON: %v", err)
 	}
 
-	log.Printf("Marshalled the polygon on its own:\n%v\n", string(b))
-
 	return b
 }
 
+// Unmarshal a GeoJSON byte blob into a Poly struct.
 func UnmarshalPolygon(b []byte) Poly {
-	return Poly{} // TODO
+	var g geom.T = geom.NewPolygon(geom.XY)
+	err := geojson.Unmarshal(b, &g)
+	if err != nil {
+		log.Fatalf("Failed to unmarshal polygon: %v", err)
+	}
+
+	return Poly{wkb.Polygon{g.(*geom.Polygon)}}
 }
 
 // Marshal the polygon as part of a GeoJSON Feature.
@@ -40,9 +45,19 @@ func (p *Poly) MarshalAsFeature() []byte {
 		log.Fatalf("Failed to marshal GeoJSON feature: %v", err)
 	}
 
-	log.Printf("Marshalled the polygon as part of a feature:\n%v\n", string(b))
-
 	return b
+}
+
+// Unmarshal the GeoJSON Feature into a Poly struct.
+func UnmarshalPolygonAsFeature(b []byte) Poly {
+	var f geojson.Feature
+	err := f.UnmarshalJSON(b)
+	if err != nil {
+		log.Fatalf("Failed to unmarshal feature: %v", err)
+	}
+
+	g := f.Geometry
+	return Poly{wkb.Polygon{g.(*geom.Polygon)}}
 }
 
 // Turn verbosity up to 11 with a FeatureCollection(tm)!
@@ -53,8 +68,6 @@ func (p *Poly) MarshalAsFeatureCollection() []byte {
 	if err != nil {
 		log.Fatalf("Failed to marshal GeoJSON feature collection: %v", err)
 	}
-
-	log.Printf("Marshalled the polygon as part of a feature collection:\n%v\n", string(b))
 
 	return b
 }

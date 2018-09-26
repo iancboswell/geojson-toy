@@ -12,10 +12,10 @@ func main() {
 	p := db.InsertStructMember()
 
 	// Create GeoJSON byte blob
-	b := p.MarshalAsFeature()
+	b := p.Marshal()
 
 	// Unmarshal GeoJSON byte blob & convert back to Pointy
-	p2 := model.UnmarshalPointAsFeature(b)
+	p2 := model.UnmarshalPoint(b)
 
 	log.Printf("Unmarshalled Pointy Point: %v", p2.P.FlatCoords())
 

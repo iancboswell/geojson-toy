@@ -24,9 +24,18 @@ func (p *Pointy) Marshal() []byte {
 		log.Fatalf("Failed to marshal point as GeoJSON: %v", err)
 	}
 
-	log.Printf("Marshalled the point on its own:\n%v\n", string(b))
-
 	return b
+}
+
+// Unmarshal a GeoJSON byte blob into a Pointy struct.
+func UnmarshalPoint(b []byte) Pointy {
+	var g geom.T = geom.NewPoint(geom.XY)
+	err := geojson.Unmarshal(b, &g)
+	if err != nil {
+		log.Fatalf("Failed to unmarshal point: %v", err)
+	}
+
+	return Pointy{wkb.Point{g.(*geom.Point)}}
 }
 
 // Marshal the point as part of a GeoJSON Feature.
@@ -36,8 +45,6 @@ func (p *Pointy) MarshalAsFeature() []byte {
 	if err != nil {
 		log.Fatalf("Failed to marshal GeoJSON feature: %v", err)
 	}
-
-	log.Printf("Marshalled the point as part of a feature:\n%v\n", string(b))
 
 	return b
 }
@@ -51,7 +58,7 @@ func UnmarshalPointAsFeature(b []byte) Pointy {
 	}
 
 	g := f.Geometry
-	return NewPointy(g.FlatCoords())
+	return Pointy{wkb.Point{g.(*geom.Point)}}
 }
 
 // Turn verbosity up to 11 with a FeatureCollection(tm)!
@@ -62,8 +69,6 @@ func (p *Pointy) MarshalAsFeatureCollection() []byte {
 	if err != nil {
 		log.Fatalf("Failed to marshal GeoJSON feature collection: %v", err)
 	}
-
-	log.Printf("Marshalled the point as part of a feature collection:\n%v\n", string(b))
 
 	return b
 }
