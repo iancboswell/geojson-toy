@@ -11,7 +11,7 @@ import (
 func main() {
 	p := db.InsertPointy()
 
-	j, err := json.Marshal(p)
+	j, err := json.Marshal(&p)
 	if err != nil {
 		log.Fatalf("Failed to marshal JSON: %v", err)
 	}
