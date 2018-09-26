@@ -9,12 +9,17 @@ import (
 )
 
 type Pointy struct {
-	P wkb.Point `db:"ST_AsWKB(pt)"`
+	P wkb.Point `db:"ST_AsWKB(pt)" json:"pt"`
 }
 
 func NewPointy(coords []float64) Pointy {
 	return Pointy{wkb.Point{geom.NewPoint(geom.XY).
 		MustSetCoords(coords)}}
+}
+
+// Implement the Marshaler interface.
+func (p *Pointy) MarshalJSON() ([]byte, error) {
+	return geojson.Marshal(p.P.Point)
 }
 
 // Marshal the point itself as a GeoJSON.

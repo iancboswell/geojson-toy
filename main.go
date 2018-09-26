@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 
 	"github.com/iancboswell/geojson-toy/db"
@@ -8,8 +9,21 @@ import (
 )
 
 func main() {
+	p := db.InsertPointy()
+
+	j, err := json.Marshal(p)
+	if err != nil {
+		log.Fatalf("Failed to marshal JSON: %v", err)
+	}
+
+	log.Printf("Marshalled JSON:\n%s\n", string(j))
+
+	log.Printf("Manual Marshal:\n%s\n", string(p.Marshal()))
+}
+
+func Munge() {
 	// Insert & retrieve Point-containing struct
-	p := db.InsertStructMember()
+	p := db.InsertPointy()
 
 	// Create GeoJSON byte blob
 	b := p.Marshal()
